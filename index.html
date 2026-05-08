@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>오늘 뭐 입지?</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{
+  font-family:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  background:#f0eee9;
+}
+
+/* ── App tokens ── */
+:root{
+  --app-bg-top:#FFE6C4;
+  --app-bg-bottom:#FFCDA0;
+  --app-accent:#FF8A3D;
+  --app-accent-ink:#5C2200;
+  --app-ink:#2A1500;
+  --app-ink-soft:#6B4A2B;
+  --app-card:#FFFFFF;
+  --app-card-soft:#FFF6EB;
+  --app-line:rgba(92,34,0,0.08);
+  --app-pill:rgba(92,34,0,0.06);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+[data-theme="rain"]{
+  --app-bg-top:#C9D8E8;
+  --app-bg-bottom:#97AFC8;
+  --app-accent:#3F6FB0;
+  --app-accent-ink:#0B2A4F;
+  --app-ink:#0E1F35;
+  --app-ink-soft:#45607E;
+  --app-card:#FFFFFF;
+  --app-card-soft:#EEF3F8;
+  --app-line:rgba(11,42,79,0.08);
+  --app-pill:rgba(11,42,79,0.06);
+}
+[data-theme="snow"]{
+  --app-bg-top:#E4EBF5;
+  --app-bg-bottom:#C8D8EC;
+  --app-accent:#4A7FB5;
+  --app-accent-ink:#0B2A4F;
+  --app-ink:#0E1F35;
+  --app-ink-soft:#45607E;
+  --app-card:#FFFFFF;
+  --app-card-soft:#EEF3F8;
+  --app-line:rgba(11,42,79,0.08);
+  --app-pill:rgba(11,42,79,0.06);
+}
+[data-theme="hot"]{
+  --app-bg-top:#FFD28A;
+  --app-bg-bottom:#FF9440;
+  --app-accent:#D94F00;
+  --app-accent-ink:#4A1A00;
+  --app-ink:#2A1500;
+  --app-ink-soft:#6B4A2B;
+  --app-card:#FFFFFF;
+  --app-card-soft:#FFF0DB;
+  --app-line:rgba(92,34,0,0.08);
+  --app-pill:rgba(92,34,0,0.06);
+}
+
+/* ── Wrapper ── */
+#app-wrapper{
+  max-width:430px;
+  margin:0 auto;
+  height:100dvh;
+  height:100vh;
+  position:relative;
+  overflow:hidden;
+  background:var(--md-sys-color-surface,#fef7ff);
+}
+
+/* ── App Screen ── */
+.app-screen{
+  width:100%;height:100%;
+  background:linear-gradient(180deg,var(--app-bg-top) 0%,var(--app-bg-bottom) 75%);
+  color:var(--app-ink);
+  display:flex;flex-direction:column;
+  position:absolute;inset:0;
+  transition:background 0.6s ease;
+}
+.app-screen.hidden{display:none}
+
+/* ── Scroll ── */
+.app-scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.app-scroll::-webkit-scrollbar{display:none}
+
+/* ── Top pad ── */
+.top-pad{height:calc(8px + var(--safe-top))}
+
+/* ── App Bar ── */
+.app-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px 8px;flex-shrink:0;
+}
+.app-bar-center{
+  flex:1;text-align:center;
+  font-size:17px;font-weight:600;letter-spacing:-0.01em;
+}
+.app-bar-icon-btn{
+  width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,0.55);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:none;color:var(--app-ink);cursor:pointer;
+  transition:opacity .15s;
+}
+.app-bar-icon-btn:active{opacity:.7}
+
+/* ── Location Pill ── */
+.location-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px 6px 10px;border-radius:999px;
+  background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  font-size:13px;font-weight:600;letter-spacing:-0.01em;
+  color:var(--app-ink);cursor:pointer;border:none;
+  transition:opacity .15s;
+}
+.location-pill:active{opacity:.7}
+
+/* ── Hero ── */
+.hero-row{
+  padding:0 20px;
+  display:flex;align-items:center;gap:16px;
+}
+.hero-meta{font-size:12px;color:var(--app-ink-soft);font-weight:400;letter-spacing:-0.005em}
+.hero-temp-row{display:flex;align-items:baseline;gap:6px;margin-top:2px}
+.hero-temp{
+  font-size:56px;font-weight:800;
+  letter-spacing:-0.03em;line-height:1.05;
+  font-feature-settings:'tnum';
+}
+.hero-feels{font-size:13px;color:var(--app-ink-soft);font-weight:400}
+.hero-catchphrase{
+  font-size:18px;font-weight:700;
+  letter-spacing:-0.02em;line-height:1.2;
+  color:var(--app-accent-ink);margin-top:2px;
+}
+.hero-illus{flex-shrink:0}
+
+/* ── Section titles ── */
+.section-title{font-size:14px;font-weight:600;letter-spacing:-0.01em}
+.section-sub{font-size:11px;color:var(--app-ink-soft);font-weight:600}
+
+/* ── Timeline card ── */
+.timeline-card{
+  margin:16px 20px 0;
+  padding:16px 0;
+  background:var(--app-card);
+  border-radius:24px;
+}
+.timeline-header{
+  padding:0 20px 12px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.timeline-slots{
+  display:flex;padding:0 12px;
+  justify-content:space-between;
+  position:relative;
+}
+.timeline-slot{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:8px 4px;
+  border-radius:16px;
+  position:relative;
+  transition:background .2s;
+}
+.timeline-slot.peak{background:var(--app-card-soft)}
+.timeline-slot.past{opacity:.4}
+.timeline-slot-time{font-size:11px;font-weight:600;color:var(--app-ink-soft)}
+.timeline-slot-dot{
+  width:28px;height:28px;border-radius:14px;
+  transition:opacity .2s;
+}
+.timeline-slot-temp{
+  font-size:14px;font-weight:600;letter-spacing:-0.01em;
+  font-feature-settings:'tnum';
+}
+.timeline-slot-mood{font-size:10px;color:var(--app-ink-soft);font-weight:600}
+.peak-badge{
+  position:absolute;top:-8px;
+  font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:999px;
+  background:var(--app-accent);color:white;
+  white-space:nowrap;
+}
+
+/* ── Outfit section ── */
+.outfit-section{padding:20px 20px 0}
+.outfit-header{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:8px;
+}
+.outfit-title{font-size:19px;font-weight:700;letter-spacing:-0.02em}
+.outfit-score{
+  font-size:11px;font-weight:700;
+  padding:3px 8px;border-radius:999px;
+  background:var(--app-card-soft);color:var(--app-accent-ink);
+}
+.outfit-sub{font-size:13px;color:var(--app-ink-soft);margin-bottom:14px;letter-spacing:-0.005em}
+.outfit-list{background:var(--app-card);border-radius:24px;overflow:hidden}
+.outfit-item{
+  display:flex;align-items:center;gap:16px;
+  padding:12px 16px;
+  cursor:pointer;transition:background .15s;
+}
+.outfit-item:active{background:var(--app-card-soft)}
+.outfit-item+.outfit-item{border-top:1px solid var(--app-line)}
+.outfit-item-thumb{
+  width:56px;height:56px;
+  background:var(--app-card-soft);border-radius:14px;
+  display:grid;place-items:center;flex-shrink:0;
+}
+.outfit-item-name{font-size:15px;font-weight:600;letter-spacing:-0.01em}
+.outfit-item-sub{font-size:11px;color:var(--app-ink-soft);font-weight:500;margin-top:2px}
+.outfit-item-arrow{flex-shrink:0}
+
+/* ── M3 Button ── */
+.m3-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:48px;padding:0 24px;border-radius:24px;border:none;
+  background:var(--app-accent);color:white;
+  font:700 15px/1 "Pretendard",system-ui;
+  letter-spacing:-0.01em;cursor:pointer;
+  transition:transform .1s,opacity .15s;
+  width:100%;margin-top:14px;
+}
+.m3-btn:active{transform:scale(0.97)}
+
+/* ── M3 Chip ── */
+.m3-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  height:32px;padding:0 12px;border-radius:8px;
+  background:transparent;border:1px solid var(--app-line);
+  font:600 13px/1 "Pretendard",system-ui;
+  color:var(--app-ink);white-space:nowrap;cursor:pointer;
+  transition:background .15s;
+}
+.m3-chip[data-selected="true"]{
+  background:var(--app-accent);color:white;border-color:var(--app-accent);
+}
+
+/* ── Bottom nav ── */
+.bottom-nav{
+  display:flex;align-items:center;justify-content:space-around;
+  padding:8px 8px calc(12px + var(--safe-bottom));
+  background:rgba(255,255,255,0.88);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--app-line);
+  flex-shrink:0;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 0;background:none;border:none;
+  color:var(--app-ink-soft);
+  font:600 11px/1 "Pretendard",system-ui;
+  cursor:pointer;letter-spacing:-0.01em;transition:color .15s;
+}
+.nav-item.active{color:var(--app-accent)}
+.nav-pill{
+  height:32px;width:64px;border-radius:16px;
+  display:grid;place-items:center;
+  transition:background .2s;
+}
+.nav-item.active .nav-pill{background:rgba(255,138,61,0.15)}
+[data-theme="rain"] .nav-item.active .nav-pill,
+[data-theme="snow"] .nav-item.active .nav-pill{background:rgba(63,111,176,0.15)}
+
+/* ── List row ── */
+.list-row{
+  display:flex;align-items:center;gap:16px;
+  padding:14px 20px;min-height:56px;
+}
+.list-row+.list-row{border-top:1px solid var(--app-line)}
+.list-row-icon{
+  width:40px;height:40px;border-radius:12px;
+  background:var(--app-card-soft);display:grid;place-items:center;
+  flex-shrink:0;color:var(--app-accent-ink);
+}
+.list-row-text{flex:1;min-width:0}
+.list-row-title{font:600 15px/1.3 "Pretendard",system-ui;color:var(--app-ink);letter-spacing:-0.01em}
+.list-row-sub{font:400 13px/1.4 "Pretendard",system-ui;color:var(--app-ink-soft);margin-top:2px;letter-spacing:-0.005em}
+
+/* ── M3 Switch ── */
+.m3-switch{
+  width:52px;height:32px;border-radius:16px;
+  background:rgba(0,0,0,.15);
+  position:relative;border:none;cursor:pointer;
+  transition:background .2s;flex-shrink:0;
+}
+.m3-switch[data-on="true"]{background:var(--app-accent)}
+.m3-switch::after{
+  content:"";position:absolute;top:4px;left:4px;
+  width:24px;height:24px;border-radius:50%;background:white;
+  transition:transform .2s cubic-bezier(0.05,0.7,0.1,1);
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+.m3-switch[data-on="true"]::after{transform:translateX(20px)}
+
+/* ── Settings sensitivity btn ── */
+.sens-btn{
+  display:flex;align-items:center;gap:14px;
+  padding:14px;border-radius:16px;
+  background:var(--app-card-soft);color:var(--app-ink);
+  border:none;text-align:left;cursor:pointer;
+  transition:background .15s;width:100%;
+  font-family:"Pretendard",system-ui;
+}
+.sens-btn.active{background:var(--app-accent);color:white}
+.sens-radio{
+  width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--app-line);
+  display:grid;place-items:center;flex-shrink:0;
+}
+.sens-btn.active .sens-radio{border-color:white}
+.sens-radio-dot{width:10px;height:10px;border-radius:50%;background:white;display:none}
+.sens-btn.active .sens-radio-dot{display:block}
+
+/* ── Detail screen ── */
+.detail-outfit-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+}
+.detail-outfit-thumb{
+  background:var(--app-card-soft);border-radius:16px;padding:12px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.detail-outfit-thumb-name{font-size:11px;font-weight:600;color:var(--app-ink);margin-top:2px}
+.reason-card{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:16px;background:var(--app-card);border-radius:18px;
+}
+.reason-icon{
+  width:40px;height:40px;border-radius:12px;
+  background:var(--app-accent);color:white;
+  display:grid;place-items:center;flex-shrink:0;
+}
+.reason-title{font:600 15px/1.3 "Pretendard",system-ui;letter-spacing:-0.01em}
+.reason-desc{font:400 13px/1.5 "Pretendard",system-ui;color:var(--app-ink-soft);margin-top:2px;letter-spacing:-0.005em}
+
+/* ── Loading screen ── */
+#screen-loading{
+  position:fixed;inset:0;z-index:99;
+  background:linear-gradient(180deg,#FFE6C4,#FFCDA0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .4s;
+}
+.loading-spinner{
+  width:40px;height:40px;border:3px solid rgba(90,34,0,.2);
+  border-top-color:#FF8A3D;border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+.loading-text{font-size:14px;color:#6B4A2B;font-weight:500}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Fade in ── */
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.fade-up{animation:fadeInUp .4s ease forwards}
+.fade-up-1{animation-delay:.05s;opacity:0}
+.fade-up-2{animation-delay:.1s;opacity:0}
+.fade-up-3{animation-delay:.15s;opacity:0}
+.fade-up-4{animation-delay:.2s;opacity:0}
+
+/* ── Error ── */
+.error-wrap{
+  padding:32px 20px;text-align:center;
+}
+.error-emoji{font-size:48px;margin-bottom:12px}
+.error-msg{font-size:15px;color:var(--app-ink-soft);line-height:1.6;margin-bottom:20px}
+.retry-btn{
+  padding:12px 28px;border-radius:24px;
+  border:none;background:var(--app-accent);color:white;
+  font:600 14px/1 "Pretendard",system-ui;cursor:pointer;
+}
+
+/* ── Diurnal alert ── */
+.diurnal-alert{
+  margin:12px 20px 0;
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 16px;
+  background:rgba(255,255,255,0.6);
+  border-left:3px solid var(--app-accent);
+  border-radius:0 14px 14px 0;
+}
+.diurnal-alert-icon{font-size:18px;flex-shrink:0}
+.diurnal-alert-text{font-size:13px;line-height:1.6;color:var(--app-ink-soft)}
+.diurnal-alert-title{font-weight:700;color:var(--app-ink);margin-bottom:1px}
+
+/* ── Weather stats ── */
+.weather-stats{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
+  margin:16px 20px 0;
+}
+.weather-stat{
+  padding:12px 14px;background:var(--app-card);border-radius:18px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.weather-stat-label{
+  display:flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;color:var(--app-ink-soft);
+}
+.weather-stat-val{font-size:20px;font-weight:700;letter-spacing:-0.02em}
+
+/* ── Settings profile ── */
+.profile-avatar{
+  width:64px;height:64px;border-radius:32px;
+  background:linear-gradient(135deg,#FFB85C,#FF8A3D);
+  display:grid;place-items:center;
+  color:white;font-size:24px;font-weight:800;
+  flex-shrink:0;
+}
+
+/* ── Scrollbar-free scrollable area ── */
+.horiz-scroll{
+  overflow-x:auto;scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.horiz-scroll::-webkit-scrollbar{display:none}
+
+/* ── Update time ── */
+.update-time{
+  text-align:center;font-size:11px;color:var(--app-ink-soft);
+  padding:16px 16px calc(8px + var(--safe-bottom));
+  opacity:.7;
+}
+</style>
+</head>
+<body>
+
+<!-- Global SVG gradient defs -->
+<svg style="display:none" aria-hidden="true">
+<defs>
+  <linearGradient id="g-knit" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#E8B884"/><stop offset="100%" stop-color="#C68852"/>
+  </linearGradient>
+  <linearGradient id="g-trench" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#D9B888"/><stop offset="100%" stop-color="#A88254"/>
+  </linearGradient>
+  <linearGradient id="g-jeans" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#5A78A0"/><stop offset="100%" stop-color="#39527A"/>
+  </linearGradient>
+  <linearGradient id="g-tee" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#E8E2D8"/>
+  </linearGradient>
+  <linearGradient id="g-sneakers" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D8D2C8"/>
+  </linearGradient>
+  <linearGradient id="g-trousers" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#5C5346"/><stop offset="100%" stop-color="#3A3328"/>
+  </linearGradient>
+  <linearGradient id="g-coat" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#D6CFC2"/><stop offset="100%" stop-color="#A89E8C"/>
+  </linearGradient>
+  <linearGradient id="g-raincoat" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#F4D34A"/><stop offset="100%" stop-color="#D9A82B"/>
+  </linearGradient>
+  <linearGradient id="g-boots" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#3F2D1E"/><stop offset="100%" stop-color="#1F1610"/>
+  </linearGradient>
+  <linearGradient id="g-umbrella" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#5B86C5"/><stop offset="100%" stop-color="#2F558E"/>
+  </linearGradient>
+  <linearGradient id="g-card" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#F5E6D0"/><stop offset="100%" stop-color="#D8B98C"/>
+  </linearGradient>
+  <radialGradient id="sun-warm" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE08A"/><stop offset="60%" stop-color="#FFB85C"/><stop offset="100%" stop-color="#FF8A3D"/>
+  </radialGradient>
+  <linearGradient id="cloud-warm" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#FFEFD8"/>
+  </linearGradient>
+  <linearGradient id="cloud-rain" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#F2F6FA"/><stop offset="100%" stop-color="#9DB1C8"/>
+  </linearGradient>
+  <linearGradient id="drop-rain" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#7AA0CB"/><stop offset="100%" stop-color="#3F6FB0"/>
+  </linearGradient>
+  <linearGradient id="snow-flake" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#E0ECFF"/><stop offset="100%" stop-color="#9DB1C8"/>
+  </linearGradient>
+</defs>
+</svg>
+
+<div id="app-wrapper">
+  <div id="screen-loading">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">날씨 정보를 불러오는 중…</p>
+  </div>
+  <div id="screen-home" class="app-screen hidden"></div>
+  <div id="screen-detail" class="app-screen hidden"></div>
+  <div id="screen-settings" class="app-screen hidden" style="background:linear-gradient(180deg,#FFF6EB 0%,#FFFBF5 60%)"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ILLUSTRATIONS
+// ═══════════════════════════════════════════════════════════
+const SVG = {
+  weatherWarm: (s=120) => `<svg viewBox="0 0 200 200" width="${s}" height="${s}">
+    <circle cx="120" cy="78" r="42" fill="url(#sun-warm)"/>
+    <g stroke="#FF8A3D" stroke-width="3" stroke-linecap="round">
+      <line x1="120" y1="22" x2="120" y2="32"/><line x1="170" y1="40" x2="163" y2="47"/>
+      <line x1="180" y1="78" x2="172" y2="78"/><line x1="60" y1="40" x2="68" y2="48"/>
+    </g>
+    <ellipse cx="76" cy="124" rx="48" ry="24" fill="url(#cloud-warm)"/>
+    <ellipse cx="106" cy="118" rx="32" ry="22" fill="url(#cloud-warm)"/>
+    <ellipse cx="56" cy="120" rx="22" ry="18" fill="url(#cloud-warm)"/>
+    <path d="M40 158 Q44 148 52 152 Q56 160 48 164 Q40 162 40 158Z" fill="#D86A2B"/>
+    <path d="M150 168 Q156 158 164 162 Q166 172 156 174 Q148 172 150 168Z" fill="#B85020" transform="rotate(20 158 168)"/>
+    <path d="M88 170 Q92 162 100 166 Q102 174 94 176 Q86 174 88 170Z" fill="#E78A3F"/>
+  </svg>`,
+
+  weatherRain: (s=120) => `<svg viewBox="0 0 200 200" width="${s}" height="${s}">
+    <ellipse cx="100" cy="80" rx="62" ry="30" fill="url(#cloud-rain)"/>
+    <ellipse cx="140" cy="72" rx="38" ry="26" fill="url(#cloud-rain)"/>
+    <ellipse cx="68" cy="76" rx="30" ry="24" fill="url(#cloud-rain)"/>
+    <path d="M68 130 L62 150 Q62 156 68 156 Q74 156 74 150Z" fill="url(#drop-rain)"/>
+    <path d="M92 138 L86 158 Q86 164 92 164 Q98 164 98 158Z" fill="url(#drop-rain)"/>
+    <path d="M116 130 L110 150 Q110 156 116 156 Q122 156 122 150Z" fill="url(#drop-rain)"/>
+    <path d="M140 138 L134 158 Q134 164 140 164 Q146 164 146 158Z" fill="url(#drop-rain)"/>
+    <path d="M80 162 L76 174 Q76 178 80 178 Q84 178 84 174Z" fill="url(#drop-rain)" opacity=".6"/>
+    <path d="M128 162 L124 174 Q124 178 128 178 Q132 178 132 174Z" fill="url(#drop-rain)" opacity=".6"/>
+  </svg>`,
+
+  weatherSnow: (s=120) => `<svg viewBox="0 0 200 200" width="${s}" height="${s}">
+    <ellipse cx="100" cy="80" rx="62" ry="30" fill="url(#cloud-rain)"/>
+    <ellipse cx="140" cy="72" rx="38" ry="26" fill="url(#cloud-rain)"/>
+    <ellipse cx="68" cy="76" rx="30" ry="24" fill="url(#cloud-rain)"/>
+    <g fill="url(#snow-flake)" font-size="22" text-anchor="middle" font-family="sans-serif">
+      <text x="70" y="148">❄</text><text x="100" y="158">❄</text>
+      <text x="130" y="148">❄</text><text x="85" y="172">❄</text>
+      <text x="115" y="172">❄</text>
+    </g>
+  </svg>`,
+
+  weatherClear: (s=120) => `<svg viewBox="0 0 200 200" width="${s}" height="${s}">
+    <circle cx="100" cy="100" r="50" fill="url(#sun-warm)"/>
+    <g stroke="#FF8A3D" stroke-width="3" stroke-linecap="round">
+      <line x1="100" y1="30" x2="100" y2="44"/><line x1="100" y1="156" x2="100" y2="170"/>
+      <line x1="30" y1="100" x2="44" y2="100"/><line x1="156" y1="100" x2="170" y2="100"/>
+      <line x1="50" y1="50" x2="60" y2="60"/><line x1="140" y1="140" x2="150" y2="150"/>
+      <line x1="150" y1="50" x2="140" y2="60"/><line x1="60" y1="140" x2="50" y2="150"/>
+    </g>
+  </svg>`,
+
+  knit: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M30 38 L46 28 L60 32 L74 28 L90 38 L92 96 Q92 102 86 102 L34 102 Q28 102 28 96Z" fill="url(#g-knit)"/>
+    <path d="M30 38 L18 64 Q16 70 22 72 L34 76 L38 50Z" fill="url(#g-knit)"/>
+    <path d="M90 38 L102 64 Q104 70 98 72 L86 76 L82 50Z" fill="url(#g-knit)"/>
+    <path d="M48 28 Q60 36 72 28 L72 36 Q60 42 48 36Z" fill="#9A6332"/>
+    <g stroke="#9A6332" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".6">
+      <path d="M50 48 Q52 56 50 64 Q48 72 50 80 Q52 88 50 96"/>
+      <path d="M60 48 Q62 56 60 64 Q58 72 60 80 Q62 88 60 96"/>
+      <path d="M70 48 Q72 56 70 64 Q68 72 70 80 Q72 88 70 96"/>
+    </g>
+    <rect x="28" y="98" width="64" height="6" fill="#9A6332" opacity=".4"/>
+  </svg>`,
+
+  trench: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M28 36 L44 26 L60 32 L76 26 L92 36 L96 108 L24 108Z" fill="url(#g-trench)"/>
+    <path d="M28 36 L16 70 Q14 76 20 78 L32 80 L36 50Z" fill="url(#g-trench)"/>
+    <path d="M92 36 L104 70 Q106 76 100 78 L88 80 L84 50Z" fill="url(#g-trench)"/>
+    <path d="M44 26 L60 50 L60 32Z" fill="#8B6940"/>
+    <path d="M76 26 L60 50 L60 32Z" fill="#8B6940"/>
+    <rect x="24" y="74" width="72" height="6" fill="#6B4D2A"/>
+    <rect x="56" y="72" width="8" height="10" rx="1" fill="#3A2A14"/>
+    <circle cx="52" cy="58" r="2" fill="#3A2A14"/><circle cx="52" cy="92" r="2" fill="#3A2A14"/>
+    <circle cx="68" cy="58" r="2" fill="#3A2A14"/><circle cx="68" cy="92" r="2" fill="#3A2A14"/>
+  </svg>`,
+
+  jeans: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M34 18 L86 18 L92 30 L84 110 L66 110 L62 56 L58 56 L54 110 L36 110Z" fill="url(#g-jeans)"/>
+    <rect x="34" y="18" width="52" height="8" fill="#2C3E5C"/>
+    <line x1="60" y1="28" x2="60" y2="56" stroke="#FFE89A" stroke-width="1" stroke-dasharray="2 2" opacity=".5"/>
+    <path d="M40 30 L52 30 L48 42 L40 42Z" fill="none" stroke="#2C3E5C" stroke-width="1" opacity=".6"/>
+    <path d="M68 30 L80 30 L80 42 L72 42Z" fill="none" stroke="#2C3E5C" stroke-width="1" opacity=".6"/>
+    <circle cx="60" cy="22" r="1.5" fill="#FFD86B"/>
+  </svg>`,
+
+  tee: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M32 36 L46 26 L52 30 Q60 34 68 30 L74 26 L88 36 L86 96 L34 96Z" fill="url(#g-tee)" stroke="#C8C0B4" stroke-width="1"/>
+    <path d="M32 36 L22 60 L34 64 L38 50Z" fill="url(#g-tee)" stroke="#C8C0B4" stroke-width="1"/>
+    <path d="M88 36 L98 60 L86 64 L82 50Z" fill="url(#g-tee)" stroke="#C8C0B4" stroke-width="1"/>
+    <path d="M52 30 Q60 36 68 30 L66 38 Q60 42 54 38Z" fill="#D8D0C2"/>
+  </svg>`,
+
+  sneakers: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M22 70 L28 56 L48 50 L70 56 Q92 62 96 70 L98 80 Q98 86 92 86 L26 86 Q20 86 20 80Z" fill="url(#g-sneakers)"/>
+    <rect x="20" y="80" width="78" height="6" fill="#3A3328" opacity=".85" rx="2"/>
+    <g stroke="#A89E8C" stroke-width="1.5" fill="none">
+      <path d="M48 60 L50 76"/><path d="M58 58 L60 76"/><path d="M68 60 L70 76"/>
+    </g>
+    <path d="M28 72 Q26 60 38 56" stroke="#FF8A3D" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  trousers: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M34 18 L86 18 L88 26 L82 110 L66 110 L62 50 L58 50 L54 110 L38 110Z" fill="url(#g-trousers)"/>
+    <rect x="34" y="18" width="52" height="6" fill="#1F1A12"/>
+    <line x1="60" y1="26" x2="60" y2="50" stroke="#C8B894" stroke-width=".5" opacity=".4"/>
+  </svg>`,
+
+  coat: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M26 38 L44 24 L60 32 L76 24 L94 38 L98 110 L22 110Z" fill="url(#g-coat)"/>
+    <path d="M26 38 L14 76 Q12 82 18 84 L30 86 L34 52Z" fill="url(#g-coat)"/>
+    <path d="M94 38 L106 76 Q108 82 102 84 L90 86 L86 52Z" fill="url(#g-coat)"/>
+    <path d="M44 24 L60 56 L60 32Z" fill="#8C8270"/>
+    <path d="M76 24 L60 56 L60 32Z" fill="#8C8270"/>
+    <circle cx="60" cy="68" r="2.5" fill="#3A3328"/>
+    <circle cx="60" cy="86" r="2.5" fill="#3A3328"/>
+  </svg>`,
+
+  raincoat: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M40 30 Q60 16 80 30 L78 42 Q60 34 42 42Z" fill="url(#g-raincoat)"/>
+    <path d="M28 38 L42 32 L60 38 L78 32 L92 38 L96 108 L24 108Z" fill="url(#g-raincoat)"/>
+    <path d="M28 38 L16 72 Q14 78 20 80 L32 82 L36 52Z" fill="url(#g-raincoat)"/>
+    <path d="M92 38 L104 72 Q106 78 100 80 L88 82 L84 52Z" fill="url(#g-raincoat)"/>
+    <line x1="60" y1="40" x2="60" y2="100" stroke="#A8801F" stroke-width="1"/>
+    <circle cx="56" cy="50" r="2" fill="#A8801F"/>
+    <circle cx="64" cy="50" r="2" fill="#A8801F"/>
+    <ellipse cx="46" cy="68" rx="2" ry="3" fill="white" opacity=".6"/>
+    <ellipse cx="74" cy="78" rx="2" ry="3" fill="white" opacity=".6"/>
+  </svg>`,
+
+  boots: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M36 24 L62 24 L62 80 Q62 90 70 90 L88 90 Q94 90 94 96 L94 102 Q94 106 90 106 L34 106 Q28 106 28 100 L28 30 Q28 24 36 24Z" fill="url(#g-boots)"/>
+    <rect x="30" y="32" width="30" height="4" fill="#FFD86B" opacity=".7"/>
+    <rect x="28" y="98" width="66" height="4" fill="#0A0604"/>
+  </svg>`,
+
+  umbrella: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M16 56 Q60 18 104 56 Q88 50 76 56 Q72 50 60 56 Q48 50 44 56 Q32 50 16 56Z" fill="url(#g-umbrella)"/>
+    <path d="M60 22 L60 96 Q60 104 68 104 Q72 104 72 100" stroke="#3A3328" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="60" cy="20" r="2" fill="#FFD86B"/>
+  </svg>`,
+
+  scarf: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M30 30 L90 30 L90 50 Q60 60 30 50Z" fill="#C44545"/>
+    <path d="M44 50 L52 100 L60 96 L58 50Z" fill="#A83434"/>
+    <path d="M70 50 L62 96 L68 100 L78 50Z" fill="#A83434"/>
+    <g stroke="white" stroke-width="1.5" opacity=".5">
+      <line x1="32" y1="36" x2="88" y2="36"/><line x1="32" y1="44" x2="88" y2="44"/>
+    </g>
+  </svg>`,
+
+  cardigan: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M30 36 L46 26 L60 30 L74 26 L90 36 L92 100 L28 100Z" fill="url(#g-card)"/>
+    <path d="M30 36 L18 64 Q16 70 22 72 L34 76 L38 50Z" fill="url(#g-card)"/>
+    <path d="M90 36 L102 64 Q104 70 98 72 L86 76 L82 50Z" fill="url(#g-card)"/>
+    <line x1="60" y1="30" x2="60" y2="100" stroke="#A88554" stroke-width="1.5"/>
+    <circle cx="56" cy="48" r="1.5" fill="#A88554"/>
+    <circle cx="56" cy="64" r="1.5" fill="#A88554"/>
+    <circle cx="56" cy="80" r="1.5" fill="#A88554"/>
+  </svg>`,
+
+  gloves: (s=48) => `<svg viewBox="0 0 120 120" width="${s}" height="${s}">
+    <path d="M30 50 L30 90 Q30 100 40 100 L52 100 Q62 100 62 90 L62 50 Q62 44 56 44 Q50 44 50 50 L50 64 L46 50 Q44 42 38 42 Q32 42 32 50Z" fill="#8B3030"/>
+    <path d="M62 62 L66 50 Q68 44 74 44 Q80 44 80 50 L80 66" fill="#8B3030" stroke="none"/>
+    <rect x="28" y="85" width="54" height="10" rx="5" fill="#6A2020"/>
+  </svg>`,
+};
+
+// ═══════════════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════════════
+const ICON = {
+  settings: (s=22,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  mapPin: (s=14,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  arrowLeft: (s=22,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="4" y2="12"/><polyline points="10 18 4 12 10 6"/></svg>`,
+  chevronRight: (s=18,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
+  home: (s=20,c="currentColor",f=false) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f?c:'none'}" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22" stroke="${f?'white':c}" fill="none"/></svg>`,
+  calendar: (s=20,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  bookmark: (s=20,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
+  user: (s=20,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  thermometer: (s=14,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0z"/></svg>`,
+  droplet: (s=14,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+  wind: (s=14,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>`,
+  sparkles: (s=18,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"/></svg>`,
+  share: (s=20,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
+  refresh: (s=20,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
+  uv: (s=14,c="currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+};
+
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_LAT = 37.4807;
+const DEFAULT_LON = 126.8831;
+const DEFAULT_LOC = '서울 가리봉동';
+
+const WX = {
+  0:{t:'맑음',e:'☀️'}, 1:{t:'대체로 맑음',e:'🌤️'}, 2:{t:'구름 조금',e:'⛅'}, 3:{t:'흐림',e:'☁️'},
+  45:{t:'안개',e:'🌫️'}, 48:{t:'안개',e:'🌫️'},
+  51:{t:'가랑비',e:'🌦️'}, 53:{t:'가랑비',e:'🌦️'}, 55:{t:'가랑비',e:'🌦️'},
+  61:{t:'비',e:'🌧️'}, 63:{t:'비',e:'🌧️'}, 65:{t:'폭우',e:'🌧️'},
+  71:{t:'눈',e:'🌨️'}, 73:{t:'눈',e:'❄️'}, 75:{t:'폭설',e:'❄️'}, 77:{t:'눈보라',e:'🌨️'},
+  80:{t:'소나기',e:'🌦️'}, 81:{t:'소나기',e:'🌦️'}, 82:{t:'강한 소나기',e:'⛈️'},
+  85:{t:'눈 소나기',e:'🌨️'}, 86:{t:'폭설 소나기',e:'❄️'},
+  95:{t:'천둥번개',e:'⛈️'}, 96:{t:'천둥번개',e:'⛈️'}, 99:{t:'천둥번개',e:'⛈️'},
+};
+
+// item key → { name, sub }
+const ITEM_META = {
+  knit:     { name:'니트',       sub:'울 혼방 · 오버사이즈' },
+  trench:   { name:'트렌치코트', sub:'면 혼방 · 가을 필수' },
+  jeans:    { name:'청바지',     sub:'스트레이트 · 논워싱' },
+  tee:      { name:'티셔츠',     sub:'코튼 100% · 화이트' },
+  sneakers: { name:'스니커즈',   sub:'화이트 · 쿠셔닝 솔' },
+  trousers: { name:'슬랙스',     sub:'와이드 · 울 혼방' },
+  coat:     { name:'울코트',     sub:'울 60% 혼방' },
+  raincoat: { name:'레인코트',   sub:'방수 95% · 후드 탈착' },
+  boots:    { name:'레인부츠',   sub:'고무 밑창 · 방수' },
+  umbrella: { name:'우산',       sub:'장우산 · 자동' },
+  scarf:    { name:'목도리',     sub:'캐시미어 혼방' },
+  cardigan: { name:'가디건',     sub:'린넨 혼방 · 라이트' },
+  gloves:   { name:'장갑',       sub:'울 소재 · 방한' },
+};
+
+// Outfit tiers: ordered hot → freezing
+// adjustedTemp = feelsLike + sensitivity_offset (cold: -3, normal: 0, warm: +3)
+const TIERS = [
+  { id:'hot',      max:Infinity, min:28, catchphrase:'더운 날, 가볍게 입어요', mood:'산뜻하게 더위 이겨내기',
+    items:['tee','jeans','sneakers','cardigan'], score:96,
+    emoji:'☀️', illus:'weatherClear' },
+  { id:'warm',     max:27, min:23, catchphrase:'따뜻한 날이에요', mood:'오늘의 베스트 코디',
+    items:['tee','cardigan','trousers','sneakers'], score:94,
+    emoji:'🌤️', illus:'weatherWarm' },
+  { id:'mild',     max:22, min:20, catchphrase:'선선한 날, 가디건 하나면 충분', mood:'가볍고 세련된 룩',
+    items:['cardigan','tee','trousers','sneakers'], score:92,
+    emoji:'🌸', illus:'weatherWarm' },
+  { id:'cool',     max:19, min:17, catchphrase:'오늘은 레이어드의 날', mood:'오늘의 베스트 코디',
+    items:['trench','knit','jeans','sneakers'], score:93,
+    emoji:'🍃', illus:'weatherWarm' },
+  { id:'chilly',   max:16, min:12, catchphrase:'자켓은 필수예요', mood:'포근하게 감싸는 무드',
+    items:['coat','knit','trousers','boots'], score:95,
+    emoji:'🍂', illus:'weatherWarm' },
+  { id:'cold',     max:11, min:9,  catchphrase:'두꺼운 코트가 필요해요', mood:'완벽한 방한 코디',
+    items:['coat','knit','trousers','boots','scarf'], score:94,
+    emoji:'🌬️', illus:'weatherWarm' },
+  { id:'veryCold', max:8,  min:5,  catchphrase:'많이 추운 날이에요', mood:'따뜻하게 완전 무장',
+    items:['coat','knit','trousers','boots','scarf'], score:92,
+    emoji:'🥶', illus:'weatherWarm' },
+  { id:'freezing', max:4,  min:-99,catchphrase:'완전 방한이 필요해요', mood:'최강 방한 코디',
+    items:['coat','knit','trousers','boots','scarf','gloves'], score:90,
+    emoji:'❄️', illus:'weatherWarm' },
+];
+
+const RAIN_ITEMS = { outer:'raincoat', name:'레인코트', sub:'방수 95% · 후드 탈착' };
+const SENS_OFFSET = { cold:-3, normal:0, warm:3 };
+const SENS_LABEL  = { cold:'추위 많이 타요', normal:'보통이에요', warm:'더위 많이 타요' };
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const STATE = {
+  lat: DEFAULT_LAT, lon: DEFAULT_LON,
+  locName: DEFAULT_LOC,
+  weather: null,
+  sensitivity: 'normal',
+  currentScreen: 'loading',
+  detailTier: null,
+};
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('outfit_v1') || '{}');
+    STATE.sensitivity = s.sensitivity || 'normal';
+  } catch(e) {}
+}
+function saveSettings() {
+  localStorage.setItem('outfit_v1', JSON.stringify({ sensitivity: STATE.sensitivity }));
+}
+
+// ═══════════════════════════════════════════════════════════
+// WEATHER API — Open-Meteo (free, no key, real data for Korea)
+// ═══════════════════════════════════════════════════════════
+async function fetchWeather(lat, lon) {
+  const url = `https://api.open-meteo.com/v1/forecast?`
+    + `latitude=${lat}&longitude=${lon}`
+    + `&current=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weathercode,windspeed_10m,relative_humidity_2m,uv_index`
+    + `&hourly=temperature_2m,apparent_temperature,precipitation_probability,weathercode`
+    + `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode,uv_index_max,windspeed_10m_max`
+    + `&timezone=Asia%2FSeoul&forecast_days=2&wind_speed_unit=ms`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('날씨 API 오류');
+  return r.json();
+}
+
+async function fetchLocName(lat, lon) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko&zoom=14`,
+      { headers: { 'Accept-Language': 'ko' } }
+    );
+    const d = await r.json();
+    const a = d.address || {};
+    const city = a.city || a.county || a.province || '';
+    const sub  = a.suburb || a.neighbourhood || a.quarter || a.town || a.village || '';
+    return [city, sub].filter(Boolean).join(' ') || DEFAULT_LOC;
+  } catch(e) { return DEFAULT_LOC; }
+}
+
+async function getLocation() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) {
+      resolve({ lat: DEFAULT_LAT, lon: DEFAULT_LON, name: DEFAULT_LOC });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        const name = await fetchLocName(lat, lon);
+        resolve({ lat, lon, name });
+      },
+      () => resolve({ lat: DEFAULT_LAT, lon: DEFAULT_LON, name: DEFAULT_LOC }),
+      { timeout: 8000, maximumAge: 300000 }
+    );
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// OUTFIT LOGIC
+// ═══════════════════════════════════════════════════════════
+function isRainy(code) { return code >= 51 && code <= 82; }
+function isSnowy(code) { return (code >= 71 && code <= 77) || code === 85 || code === 86; }
+function isThunder(code) { return code >= 95; }
+
+function getTheme(code, feelsLike) {
+  if (isThunder(code) || isRainy(code)) return 'rain';
+  if (isSnowy(code)) return 'snow';
+  if (feelsLike >= 26) return 'hot';
+  return 'warm';
+}
+
+function getWeatherIllus(code, feelsLike) {
+  if (isRainy(code) || isThunder(code)) return 'weatherRain';
+  if (isSnowy(code)) return 'weatherSnow';
+  if (code <= 1 && feelsLike >= 20) return 'weatherClear';
+  return 'weatherWarm';
+}
+
+function getOutfit(feelsLike, sensitivity, rainProb, weathercode) {
+  const adj = feelsLike + SENS_OFFSET[sensitivity];
+  const tier = TIERS.find(t => adj >= t.min) || TIERS[TIERS.length - 1];
+
+  let items = [...tier.items];
+  const isRain = isRainy(weathercode) || isThunder(weathercode) || rainProb >= 50;
+
+  if (isRain) {
+    // Replace first outer layer with raincoat
+    const outerIdx = items.findIndex(i => ['coat','trench','cardigan'].includes(i));
+    if (outerIdx >= 0) items[outerIdx] = 'raincoat';
+    else items.unshift('raincoat');
+    // Add umbrella if not present
+    if (!items.includes('umbrella')) items.push('umbrella');
+  }
+
+  return { tier, items: items.slice(0, 5), isRain,
+    score: tier.score,
+    mood: SENS_LABEL[sensitivity] + ' · ' + tier.mood,
+    catchphrase: isRain ? '비를 대비한 코디예요' : tier.catchphrase,
+  };
+}
+
+function getMood(temp, code) {
+  if (isThunder(code)) return '천둥';
+  if (isSnowy(code)) return '눈';
+  if (isRainy(code)) return code >= 61 ? '비' : '가랑비';
+  if (code >= 45) return '안개';
+  if (temp >= 28) return '더워';
+  if (temp >= 22) return '포근';
+  if (temp >= 17) return '선선';
+  if (temp >= 12) return '쌀쌀';
+  if (temp >= 5)  return '추워';
+  return '매우춥';
+}
+
+function getTimelineSlots(hourly, weathercode) {
+  const now    = new Date();
+  const today  = now.toISOString().split('T')[0];
+  const target = [9, 12, 15, 18, 21];
+  const slots  = [];
+
+  for (const h of target) {
+    const key = `${today}T${String(h).padStart(2,'0')}:00`;
+    const idx = hourly.time.indexOf(key);
+    if (idx < 0) continue;
+    const temp = Math.round(hourly.temperature_2m[idx]);
+    const rain = hourly.precipitation_probability[idx] || 0;
+    const code = hourly.weathercode[idx];
+    slots.push({ label:`${h}시`, h, temp, rain, code, past: h < now.getHours() });
+  }
+
+  // Fill with tomorrow if short
+  if (slots.filter(s=>!s.past).length < 3) {
+    const tmr = new Date(now); tmr.setDate(tmr.getDate()+1);
+    const tmrStr = tmr.toISOString().split('T')[0];
+    for (const h of target) {
+      if (slots.length >= 5) break;
+      const key = `${tmrStr}T${String(h).padStart(2,'0')}:00`;
+      const idx = hourly.time.indexOf(key);
+      if (idx < 0) continue;
+      slots.push({
+        label:`내일 ${h}시`, h, past:false,
+        temp: Math.round(hourly.temperature_2m[idx]),
+        rain: hourly.precipitation_probability[idx] || 0,
+        code: hourly.weathercode[idx],
+      });
+    }
+  }
+
+  // Find peak index
+  const rain = isRainy(weathercode) || isThunder(weathercode);
+  let peakIdx = 0, peakVal = -999;
+  slots.forEach((s, i) => {
+    const v = rain ? s.rain : s.temp;
+    if (v > peakVal) { peakVal = v; peakIdx = i; }
+  });
+  slots.forEach((s, i) => { s.isPeak = i === peakIdx; });
+  return slots;
+}
+
+function getDiurnalAlert(tMin, tMax, eveningTemp) {
+  const diff = tMax - tMin;
+  if (diff >= 10) return { title:'일교차 주의 🌡️', body:`오늘 일교차 ${Math.round(diff)}°. 벗고 입기 쉬운 겉옷이 필수예요.` };
+  if (diff >= 8)  return { title:'일교차가 큰 날이에요', body:`낮과 저녁 온도 차가 커요. 레이어드를 추천해요.` };
+  if (eveningTemp !== null && eveningTemp <= 10) {
+    return { title:'저녁에 쌀쌀해요', body:`퇴근 무렵 ${Math.round(eveningTemp)}°까지 내려가요. 겉옷을 꼭 챙기세요.` };
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDERING HELPERS
+// ═══════════════════════════════════════════════════════════
+function bottomNav(active) {
+  const tabs = [
+    { id:'home',  label:'오늘',   icon: (a) => ICON.home(20, a?'var(--app-accent)':'var(--app-ink-soft)', a) },
+    { id:'week',  label:'이번주', icon: (a) => ICON.calendar(20, a?'var(--app-accent)':'var(--app-ink-soft)') },
+    { id:'saved', label:'저장',   icon: (a) => ICON.bookmark(20, a?'var(--app-accent)':'var(--app-ink-soft)') },
+    { id:'me',    label:'MY',     icon: (a) => ICON.user(20, a?'var(--app-accent)':'var(--app-ink-soft)') },
+  ];
+  return `<nav class="bottom-nav">${tabs.map(t => {
+    const on = t.id === active;
+    return `<button class="nav-item${on?' active':''}" data-nav="${t.id}">
+      <span class="nav-pill">${t.icon(on)}</span>${t.label}
+    </button>`;
+  }).join('')}</nav>`;
+}
+
+function formatDate(d) {
+  const DAYS = ['일','월','화','수','목','금','토'];
+  return `${d.getMonth()+1}월 ${d.getDate()}일 ${DAYS[d.getDay()]}요일`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCREEN: HOME (V3 · 타임라인 스크롤)
+// ═══════════════════════════════════════════════════════════
+function renderHome() {
+  const w = STATE.weather;
+  const cur = w.current;
+  const daily = w.daily;
+  const hourly = w.hourly;
+  const now = new Date();
+
+  const feelsLike = Math.round(cur.apparent_temperature);
+  const temp      = Math.round(cur.temperature_2m);
+  const code      = cur.weathercode;
+  const rainProb  = cur.precipitation_probability || 0;
+  const wind      = cur.windspeed_10m;
+  const humidity  = cur.relative_humidity_2m;
+  const uvIndex   = cur.uv_index || (daily.uv_index_max && daily.uv_index_max[0]) || 0;
+  const tMax      = Math.round(daily.temperature_2m_max[0]);
+  const tMin      = Math.round(daily.temperature_2m_min[0]);
+  const maxRain   = daily.precipitation_probability_max[0] || rainProb;
+
+  const theme   = getTheme(code, feelsLike);
+  const illus   = getWeatherIllus(code, feelsLike);
+  const outfit  = getOutfit(feelsLike, STATE.sensitivity, maxRain, code);
+  const slots   = getTimelineSlots(hourly, code);
+  const wx      = WX[code] || WX[0];
+
+  // Evening temp for diurnal alert
+  const todayStr = now.toISOString().split('T')[0];
+  const eve = [19, 20, 21].map(h => {
+    const k = `${todayStr}T${String(h).padStart(2,'0')}:00`;
+    const i = hourly.time.indexOf(k);
+    return i >= 0 ? hourly.temperature_2m[i] : null;
+  }).filter(v => v !== null);
+  const eveningTemp = eve.length ? Math.min(...eve) : null;
+  const alert = getDiurnalAlert(tMin, tMax, eveningTemp);
+
+  // Timeline label
+  const slotFirst = slots[0]?.label || '09시';
+  const slotLast  = slots[slots.length-1]?.label || '21시';
+  const rainDay   = theme === 'rain' || theme === 'snow';
+  const dotBg     = rainDay
+    ? 'linear-gradient(180deg,#9DB1C8,#3F6FB0)'
+    : 'linear-gradient(180deg,#FFE08A,#FF8A3D)';
+
+  const screen = document.getElementById('screen-home');
+  screen.setAttribute('data-theme', theme);
+
+  screen.innerHTML = `
+    <div class="top-pad"></div>
+    <div class="app-bar fade-up">
+      <button class="location-pill" id="btn-loc">
+        ${ICON.mapPin(14,'var(--app-ink)')}
+        <span id="loc-label">${STATE.locName}</span>
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="app-bar-icon-btn" id="btn-refresh" title="새로고침">${ICON.refresh(20,'var(--app-ink)')}</button>
+        <button class="app-bar-icon-btn" id="btn-settings">${ICON.settings(20,'var(--app-ink)')}</button>
+      </div>
+    </div>
+
+    <div class="app-scroll">
+      <!-- Hero -->
+      <div class="hero-row fade-up fade-up-1">
+        <div style="flex:1">
+          <div class="hero-meta">${formatDate(now)} · ${STATE.locName.split(' ').pop() || STATE.locName}</div>
+          <div class="hero-temp-row">
+            <span class="hero-temp">${temp}</span><span style="font-size:40px;font-weight:300;opacity:.7;line-height:1">°</span>
+            <span class="hero-feels">체감 ${feelsLike}°</span>
+          </div>
+          <div class="hero-catchphrase">${outfit.catchphrase}</div>
+          <div style="margin-top:6px;font-size:12px;color:var(--app-ink-soft)">
+            ${wx.e} ${wx.t} &nbsp;·&nbsp; 최저 ${tMin}° / 최고 ${tMax}°
+          </div>
+        </div>
+        <div class="hero-illus">${SVG[illus](120)}</div>
+      </div>
+
+      <!-- Timeline card -->
+      <div class="timeline-card fade-up fade-up-2">
+        <div class="timeline-header">
+          <span class="section-title">시간별 흐름</span>
+          <span class="section-sub">${slotFirst} → ${slotLast}</span>
+        </div>
+        <div class="timeline-slots">
+          ${slots.map(s => `
+            <div class="timeline-slot${s.isPeak?' peak':''}${s.past?' past':''}">
+              ${s.isPeak ? `<div class="peak-badge">PEAK</div>` : ''}
+              <div class="timeline-slot-time">${s.label}</div>
+              <div class="timeline-slot-dot" style="background:${dotBg};opacity:${rainDay ? (s.rain >= 50 ? 1 : 0.35) : (s.temp >= tMin + (tMax-tMin)*0.4 ? 1 : 0.4)}"></div>
+              <div class="timeline-slot-temp">${s.temp}°</div>
+              <div class="timeline-slot-mood">${getMood(s.temp, s.code)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      ${alert ? `
+      <div class="diurnal-alert fade-up fade-up-2">
+        <div class="diurnal-alert-icon">⚠️</div>
+        <div class="diurnal-alert-text">
+          <div class="diurnal-alert-title">${alert.title}</div>
+          ${alert.body}
+        </div>
+      </div>` : ''}
+
+      <!-- Outfit section -->
+      <div class="outfit-section fade-up fade-up-3">
+        <div class="outfit-header">
+          <span class="outfit-title">지금 어울리는 코디</span>
+          <span class="outfit-score">${outfit.score}점</span>
+        </div>
+        <div class="outfit-sub">${outfit.mood}</div>
+        <div class="outfit-list">
+          ${outfit.items.map((key, i) => {
+            const meta = ITEM_META[key] || { name: key, sub: '' };
+            return `<div class="outfit-item" data-item="${key}" data-idx="${i}">
+              <div class="outfit-item-thumb">${SVG[key] ? SVG[key](48) : ''}</div>
+              <div style="flex:1;min-width:0">
+                <div class="outfit-item-name">${meta.name}</div>
+                <div class="outfit-item-sub">${meta.sub}</div>
+              </div>
+              <div class="outfit-item-arrow">${ICON.chevronRight(18,'var(--app-ink-soft)')}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        <button class="m3-btn" id="btn-alt-outfit">
+          ${ICON.sparkles(18,'white')} 다른 코디 추천받기
+        </button>
+      </div>
+
+      <!-- Weather stats -->
+      <div class="weather-stats fade-up fade-up-4">
+        <div class="weather-stat">
+          <div class="weather-stat-label">${ICON.droplet(14,'var(--app-ink-soft)')} 습도</div>
+          <div class="weather-stat-val">${humidity}<span style="font-size:14px;font-weight:400">%</span></div>
+          <div style="font-size:11px;color:var(--app-ink-soft)">${humidity<30?'건조함':humidity<60?'적당함':humidity<80?'습함':'매우 습함'}</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-label">${ICON.wind(14,'var(--app-ink-soft)')} 바람</div>
+          <div class="weather-stat-val">${wind.toFixed(1)}<span style="font-size:14px;font-weight:400">m/s</span></div>
+          <div style="font-size:11px;color:var(--app-ink-soft)">${wind<3?'잔바람':wind<7?'약한 바람':wind<12?'보통 바람':'강한 바람'}</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-label">${ICON.droplet(14,'var(--app-ink-soft)')} 강수확률</div>
+          <div class="weather-stat-val">${maxRain}<span style="font-size:14px;font-weight:400">%</span></div>
+          <div style="font-size:11px;color:var(--app-ink-soft)">${maxRain>=70?'우산 필수':maxRain>=40?'우산 추천':'강수 적음'}</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-label">${ICON.uv(14,'var(--app-ink-soft)')} 자외선</div>
+          <div class="weather-stat-val">${Math.round(uvIndex)}</div>
+          <div style="font-size:11px;color:var(--app-ink-soft)">${uvIndex<=2?'낮음':uvIndex<=5?'보통':uvIndex<=7?'강함':'매우 강함'}</div>
+        </div>
+      </div>
+
+      <div class="update-time">마지막 업데이트 ${now.getHours()}시 ${String(now.getMinutes()).padStart(2,'0')}분</div>
+    </div>
+
+    ${bottomNav('home')}
+  `;
+
+  // Store current outfit for detail screen
+  STATE.detailOutfit = outfit;
+  STATE.detailWeather = { code, feelsLike, wind, rainProb: maxRain, tMin, tMax };
+
+  // Events
+  screen.querySelector('#btn-settings').onclick = () => showScreen('settings');
+  screen.querySelector('#btn-refresh').onclick  = refreshWeather;
+  screen.querySelector('#btn-loc').onclick      = refreshLocation;
+  screen.querySelectorAll('.outfit-item').forEach(el => {
+    el.onclick = () => showScreen('detail');
+  });
+  screen.querySelector('#btn-alt-outfit')?.addEventListener('click', () => {
+    alert('다른 코디 추천 기능은 준비 중이에요 😊');
+  });
+  screen.querySelectorAll('[data-nav]').forEach(btn => {
+    btn.onclick = () => {
+      if (btn.dataset.nav !== 'home') {
+        alert('준비 중인 화면이에요 😊');
+      }
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCREEN: DETAIL
+// ═══════════════════════════════════════════════════════════
+function renderDetail() {
+  const outfit = STATE.detailOutfit;
+  const wx = STATE.detailWeather;
+  if (!outfit) return;
+
+  const isRain = wx.code >= 51 && wx.code <= 95;
+  const reasons = isRain ? [
+    { icon: ICON.droplet(20,'white'), title: `강수확률 ${wx.rainProb}%`, desc: '비에 대비해 방수 아우터가 필요해요.' },
+    { icon: ICON.wind(20,'white'),    title: `바람 ${wx.wind.toFixed(1)}m/s`, desc: '바람이 있으면 체감온도가 더 낮아져요.' },
+    { icon: ICON.thermometer(20,'white'), title: `체감 ${wx.feelsLike}°`, desc: '비에 젖으면 더 춥게 느껴져요. 니트로 안쪽 보온을 챙기세요.' },
+  ] : [
+    { icon: ICON.thermometer(20,'white'), title: `일교차 ${wx.tMax - wx.tMin}°`, desc: `낮 최고 ${wx.tMax}°에서 최저 ${wx.tMin}°까지 변해요. 레이어드가 정답이에요.` },
+    { icon: ICON.wind(20,'white'),        title: `바람 ${wx.wind.toFixed(1)}m/s`, desc: '체감온도를 낮추는 바람이에요. 겉옷으로 차단해줘요.' },
+    { icon: ICON.sparkles(20,'white'),    title: `체감 ${wx.feelsLike}°`, desc: SENS_LABEL[STATE.sensitivity] + '이신 분에게 맞춰 추천했어요.' },
+  ];
+
+  const screen = document.getElementById('screen-detail');
+  screen.setAttribute('data-theme', STATE.detailWeather ? getTheme(STATE.detailWeather.code, STATE.detailWeather.feelsLike) : 'warm');
+
+  screen.innerHTML = `
+    <div class="top-pad"></div>
+    <div class="app-bar">
+      <button class="app-bar-icon-btn" id="btn-back-detail">${ICON.arrowLeft(22,'var(--app-ink)')}</button>
+      <div style="display:flex;gap:8px">
+        <button class="app-bar-icon-btn">${ICON.bookmark(20,'var(--app-ink)')}</button>
+        <button class="app-bar-icon-btn">${ICON.share(20,'var(--app-ink)')}</button>
+      </div>
+    </div>
+
+    <div class="app-scroll" style="padding:0 0 24px">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="padding:4px 10px;background:var(--app-accent);color:white;border-radius:999px;font-size:11px;font-weight:700">매치율 ${outfit.score}%</span>
+          <span style="font-size:12px;color:var(--app-ink-soft);font-weight:600">${SENS_LABEL[STATE.sensitivity]} · ${formatDate(new Date())}</span>
+        </div>
+        <div style="font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-top:10px">${outfit.tier.mood}</div>
+        <div style="font-size:14px;color:var(--app-ink-soft);margin-top:4px;letter-spacing:-0.005em">${isRain?'비 오는 날에도 산뜻하게':'오늘의 데일리 코디'}</div>
+      </div>
+
+      <div style="margin:16px 20px 0;background:var(--app-card);border-radius:24px;padding:24px;position:relative">
+        <div class="detail-outfit-grid">
+          ${outfit.items.map(key => {
+            const meta = ITEM_META[key] || { name: key };
+            return `<div class="detail-outfit-thumb">
+              ${SVG[key] ? SVG[key](68) : ''}
+              <div class="detail-outfit-thumb-name">${meta.name}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div style="padding:24px 20px 0">
+        <div style="font-size:19px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px">왜 이 코디일까?</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${reasons.map(r => `
+            <div class="reason-card">
+              <div class="reason-icon">${r.icon}</div>
+              <div>
+                <div class="reason-title">${r.title}</div>
+                <div class="reason-desc">${r.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="padding:20px 20px 0">
+        <div style="font-size:14px;font-weight:600;color:var(--app-ink-soft);margin-bottom:10px">이 추천 어땠어요?</div>
+        <div style="display:flex;gap:8px">
+          ${['딱 좋아요 🙆','좀 더워요 🥵','좀 추워요 🥶'].map(t =>
+            `<button class="m3-chip" style="flex:1;justify-content:center;height:40px;font-size:12px">${t}</button>`
+          ).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  screen.querySelector('#btn-back-detail').onclick = () => showScreen('home');
+  screen.querySelectorAll('.m3-chip').forEach(btn => {
+    btn.onclick = () => {
+      btn.setAttribute('data-selected','true');
+      setTimeout(() => showScreen('home'), 600);
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCREEN: SETTINGS
+// ═══════════════════════════════════════════════════════════
+function renderSettings() {
+  const screen = document.getElementById('screen-settings');
+  screen.removeAttribute('data-theme');
+
+  screen.innerHTML = `
+    <div class="top-pad"></div>
+    <div class="app-bar">
+      <button class="app-bar-icon-btn" id="btn-back-settings" style="background:rgba(255,138,61,0.1)">${ICON.arrowLeft(22,'#5C2200')}</button>
+      <div style="flex:1;text-align:center;font-size:17px;font-weight:600;letter-spacing:-0.01em;color:#2A1500">개인 설정</div>
+      <div style="width:44px"></div>
+    </div>
+
+    <div class="app-scroll" style="padding:8px 0 24px">
+      <div style="padding:0 20px 16px;display:flex;align-items:center;gap:14px">
+        <div class="profile-avatar">지</div>
+        <div>
+          <div style="font-size:19px;font-weight:700;letter-spacing:-0.02em;color:#2A1500">지수님</div>
+          <div style="font-size:13px;color:#6B4A2B;margin-top:2px">가입한 지 1일 · 코디 추천 받는 중</div>
+        </div>
+      </div>
+
+      <div style="padding:0 20px">
+        <div style="font-size:13px;font-weight:600;color:#6B4A2B;margin-bottom:10px;padding-left:4px">추위·더위 민감도</div>
+        <div style="background:white;border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:8px">
+          ${[
+            { id:'cold',   e:'🥶', t:'추위 많이 타요',  d:'한 겹 더 두텁게 추천' },
+            { id:'normal', e:'🙂', t:'보통이에요',       d:'기상청 기준 그대로' },
+            { id:'warm',   e:'🥵', t:'더위 많이 타요',  d:'한 겹 가볍게 추천' },
+          ].map(o => `
+            <button class="sens-btn${STATE.sensitivity===o.id?' active':''}" data-sens="${o.id}">
+              <span style="font-size:28px">${o.e}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">${o.t}</div>
+                <div style="font-size:12px;opacity:.8;margin-top:1px">${o.d}</div>
+              </div>
+              <div class="sens-radio"><div class="sens-radio-dot"></div></div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="padding:20px 20px 0">
+        <div style="font-size:13px;font-weight:600;color:#6B4A2B;margin-bottom:10px;padding-left:4px">선호 스타일</div>
+        <div style="background:white;border-radius:24px;padding:16px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${[['캐주얼',true],['미니멀',true],['스트릿',false],['포멀',false],['빈티지',true],['스포티',false]].map(([l,on])=>
+              `<span class="m3-chip" data-selected="${on}" style="--app-accent:#FF8A3D;--app-line:rgba(92,34,0,.15)">${l}</span>`
+            ).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:20px 20px 0">
+        <div style="font-size:13px;font-weight:600;color:#6B4A2B;margin-bottom:10px;padding-left:4px">알림</div>
+        <div style="background:white;border-radius:24px;overflow:hidden">
+          ${[
+            { t:'아침 코디 추천', s:'매일 오전 7:30', on:true },
+            { t:'갑작스런 날씨 변화', s:'비·강풍 30분 전', on:true },
+            { t:'주간 코디 리포트', s:'일요일 저녁', on:false },
+          ].map((r,i) => `
+            <div class="list-row" style="${i>0?'border-top:1px solid rgba(92,34,0,.08)':''}">
+              <div style="flex:1;min-width:0">
+                <div class="list-row-title">${r.t}</div>
+                <div class="list-row-sub">${r.s}</div>
+              </div>
+              <button class="m3-switch" data-on="${r.on}" style="--app-accent:#FF8A3D"></button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="padding:20px 20px 0">
+        <div style="font-size:13px;font-weight:600;color:#6B4A2B;margin-bottom:10px;padding-left:4px">위치</div>
+        <div style="background:white;border-radius:24px;overflow:hidden">
+          <div class="list-row">
+            <div class="list-row-icon" style="--app-card-soft:rgba(255,138,61,.1);--app-accent-ink:#5C2200">${ICON.mapPin(18,'#5C2200')}</div>
+            <div class="list-row-text">
+              <div class="list-row-title">${STATE.locName}</div>
+              <div class="list-row-sub">${STATE.lat === DEFAULT_LAT ? '기본 위치' : '현재 위치 사용 중'}</div>
+            </div>
+            ${ICON.chevronRight(18,'#6B4A2B')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  screen.querySelector('#btn-back-settings').onclick = () => {
+    renderHome();
+    showScreen('home');
+  };
+  screen.querySelectorAll('[data-sens]').forEach(btn => {
+    btn.onclick = () => {
+      STATE.sensitivity = btn.dataset.sens;
+      saveSettings();
+      renderSettings();
+    };
+  });
+  screen.querySelectorAll('.m3-switch').forEach(sw => {
+    sw.onclick = () => sw.setAttribute('data-on', sw.getAttribute('data-on') === 'true' ? 'false' : 'true');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function showScreen(id) {
+  ['home','detail','settings'].forEach(s => {
+    document.getElementById('screen-' + s).classList.toggle('hidden', s !== id);
+  });
+  document.getElementById('screen-loading').style.display = 'none';
+  STATE.currentScreen = id;
+}
+
+// ═══════════════════════════════════════════════════════════
+// REFRESH
+// ═══════════════════════════════════════════════════════════
+async function refreshWeather() {
+  const btn = document.querySelector('#btn-refresh');
+  if (btn) { btn.style.animation = 'spin .8s linear infinite'; btn.disabled = true; }
+  try {
+    STATE.weather = await fetchWeather(STATE.lat, STATE.lon);
+    renderHome();
+  } catch(e) {
+    console.error(e);
+  } finally {
+    if (btn) { btn.style.animation = ''; btn.disabled = false; }
+  }
+}
+
+async function refreshLocation() {
+  const btn = document.querySelector('#btn-loc');
+  if (btn) btn.style.opacity = '.5';
+  try {
+    const loc = await getLocation();
+    STATE.lat = loc.lat; STATE.lon = loc.lon; STATE.locName = loc.name;
+    STATE.weather = await fetchWeather(STATE.lat, STATE.lon);
+    renderHome();
+  } catch(e) {
+    console.error(e);
+  } finally {
+    if (btn) btn.style.opacity = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function init() {
+  loadSettings();
+
+  try {
+    // Attempt geolocation + weather in parallel (location first)
+    const loc = await getLocation();
+    STATE.lat = loc.lat; STATE.lon = loc.lon; STATE.locName = loc.name;
+
+    STATE.weather = await fetchWeather(STATE.lat, STATE.lon);
+
+    renderHome();
+    renderDetail();
+    renderSettings();
+
+    // Fade out loading
+    const loading = document.getElementById('screen-loading');
+    loading.style.opacity = '0';
+    setTimeout(() => { showScreen('home'); }, 400);
+
+  } catch(err) {
+    console.error(err);
+    const loading = document.getElementById('screen-loading');
+    loading.innerHTML = `
+      <div class="error-wrap">
+        <div class="error-emoji">🌥️</div>
+        <p class="error-msg">날씨 정보를 불러오지 못했어요.<br>인터넷 연결을 확인해주세요.</p>
+        <button class="retry-btn" onclick="init()">다시 시도</button>
+      </div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
